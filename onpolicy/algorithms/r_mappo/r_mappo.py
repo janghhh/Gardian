@@ -100,6 +100,13 @@ class R_MAPPO():
         :return dist_entropy: (torch.Tensor) action entropies.
         :return actor_grad_norm: (torch.Tensor) gradient norm from actor update.
         :return imp_weights: (torch.Tensor) importance sampling weights.
+
+        shart_obs_batch: 공유 관측. 모든 에이전트의 정보를 담은 global state. Critic의 입력으로만 들어감. 
+        obs_batch: 개별 관측. local state. Actor의 입력으로 들어감. 실행 시점에는 이 obs_batch만 사용해 행동 결정하게 됨.
+
+        sample의 rnn_states_batch, rnn_states_critic_batch 모두 RNN의 hidden state. 기억임.
+        이전 데이터 chunk의 마지막 시점에서 나온 hidden state가 현재 묶음의 첫 입력으로 들어가면서,
+        에피소드 전체에 걸쳐 기억이 끊기지 않고 이어짐.
         """
         if len(sample) == 12:
             share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, \
@@ -175,6 +182,10 @@ class R_MAPPO():
         :param update_actor: (bool) whether to update actor network.
 
         :return train_info: (dict) contains information regarding training update (e.g. loss, grad norms, etc).
+
+        _use_recurrent_policy 플래그 값에 따라 데이터 생성기가 달라짐.
+        recurrent True 시, buffer.recurrent_generator() 사용. 경험 데이터 전체에서 무작위로 샘플링하는 대신, 
+        시간 순서가 유지되는 데이터 chunk를 반환. RNN은 순서가 있는 데이터 입력받아야 시간적 패턴 학습할 수 있기 때문.
         """
         if self._use_popart or self._use_valuenorm:
             advantages = buffer.returns[:-1] - self.value_normalizer.denormalize(buffer.value_preds[:-1])

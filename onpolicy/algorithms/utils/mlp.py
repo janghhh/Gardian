@@ -1,7 +1,14 @@
 import torch.nn as nn
 from .util import init, get_clones
 
-"""MLP modules."""
+"""MLP modules.
+    Linear(FC) 레이어 뒤에 활성화 함수와 LayerNorm이 한 세트로 따라와서
+    학습을 매우 안정적으로 만들어주는 효과적인 구조
+
+    네트워크 총 1 + layer_N개의 은닉층으로 구성
+    입력층 fc1: Linear(입력 차원 -> hidden_size) → 활성화 함수 → LayerNorm
+    추가 은닉층 fc2: [Linear(hidden_size -> hidden_size) → 활성화 함수 → LayerNorm] x layer_N번 반복
+"""
 
 class MLPLayer(nn.Module):
     def __init__(self, input_dim, hidden_size, layer_N, use_orthogonal, use_ReLU):
